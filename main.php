@@ -368,11 +368,15 @@ function bkncpt_bokun_auth_check_page() {
             echo '</tbody>';
             echo '</table>';
 
-            // Import All button
-            echo '<button class="button import-all-activities" data-only="0" >'.esc_html( 'Import All', 'import-bokun-to-wp-ecommerce-and-custom-fileds' ).'</button><br/><div class="progress-wrapper">
-            <progress class="bkncpt-progress-bar bkncpt-hide" max="100" value="0"></progress>
-            <span class="progress-text bkncpt-hide">0%</span>
-          </div>';
+            // Import All button and Drive sync action
+            echo '<div class="bkncpt-bulk-actions">';
+            echo '<button class="button import-all-activities" data-only="0" >'.esc_html( 'Import All', 'import-bokun-to-wp-ecommerce-and-custom-fileds' ).'</button>';
+            echo ' <button class="button bkncpt-sync-drive" data-only="0">' . esc_html__( 'Sync Images to Google Drive', 'import-bokun-to-wp-ecommerce-and-custom-fileds' ) . '</button>';
+            echo '</div>';
+            echo '<div class="progress-wrapper">';
+            echo '            <progress class="bkncpt-progress-bar bkncpt-hide" max="100" value="0"></progress>';
+            echo '            <span class="progress-text bkncpt-hide">0%</span>';
+            echo '          </div>';
             
         }
 
@@ -535,11 +539,15 @@ function bkncpt_bokun_booking_list() {
             echo '</tbody>';
             echo '</table>';
 
-            // Import All button
-            echo '<button class="button import-all-activities" data-only="0" >'.esc_html( 'Import All', 'import-bokun-to-wp-ecommerce-and-custom-fileds' ).'</button><br/><div class="progress-wrapper">
-            <progress class="bkncpt-progress-bar bkncpt-hide" max="100" value="0"></progress>
-            <span class="progress-text bkncpt-hide">0%</span>
-          </div>';
+            // Import All button and Drive sync action
+            echo '<div class="bkncpt-bulk-actions">';
+            echo '<button class="button import-all-activities" data-only="0" >'.esc_html( 'Import All', 'import-bokun-to-wp-ecommerce-and-custom-fileds' ).'</button>';
+            echo ' <button class="button bkncpt-sync-drive" data-only="0">' . esc_html__( 'Sync Images to Google Drive', 'import-bokun-to-wp-ecommerce-and-custom-fileds' ) . '</button>';
+            echo '</div>';
+            echo '<div class="progress-wrapper">';
+            echo '            <progress class="bkncpt-progress-bar bkncpt-hide" max="100" value="0"></progress>';
+            echo '            <span class="progress-text bkncpt-hide">0%</span>';
+            echo '          </div>';
             
         }
 
