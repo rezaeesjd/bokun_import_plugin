@@ -18,6 +18,30 @@ jQuery(document).ready(function($) {
 
 
 
+    function bkncptCollectActivityIds(table) {
+        var ids = [];
+        var dataOnly = 0;
+
+        if ($('.bokun_post_cb:checked').length > 0) {
+            dataOnly = 1;
+            ids = $('.bokun_post_cb:checked').map(function() { return $(this).val(); }).get();
+        } else {
+            if (table) {
+                var originalLength = table.page.len();
+                table.page.len(-1).draw();
+                $('#activities-table tbody input[type="checkbox"]').each(function() {
+                    ids.push($(this).val());
+                });
+                table.page.len(originalLength).draw();
+            }
+        }
+
+        return {
+            ids: ids,
+            dataOnly: dataOnly
+        };
+    }
+
     function single_ajax_call(activityId) {
         var productListId = $("#product_list_id").val();
         var data_only = 0;
@@ -110,26 +134,9 @@ jQuery(document).ready(function($) {
     }
     $(".import-all-activities").click(function() {
         var table = $('#activities-table').DataTable();
-        var data_only = 0;
-        if ($('.bokun_post_cb:checked').length > 0) {
-            data_only = 1;
-            var selected_boheck = $('.bokun_post_cb:checked').map(function() { return $(this).val(); }).get();
-        } else {
-
-            var selected_boheck = [];
-            // Loop through each page
-            table.page.len(-1).draw();
-            for (var i = 0; i < table.page.info().pages; i++) {
-                table.page(i).draw(false);
-                // Find checkboxes in the current page and collect their values
-                $('#activities-table tbody input[type="checkbox"]').each(function() {
-                    selected_boheck.push($(this).val());
-                });
-            }
-            // Reset pagination to its original state
-            table.page.len(10).draw();
-        }
-
+        var selection = bkncptCollectActivityIds(table);
+        var selected_boheck = selection.ids;
+        var data_only = selection.dataOnly;
         $('.import-all-activities').text('Inprogress...');
         $('.import-all-activities').addClass('bkncpt-button-inprogress');
         $('.bkncpt-progress-bar').removeClass('bkncpt-hide');
@@ -137,6 +144,50 @@ jQuery(document).ready(function($) {
             $('.import-activity-' + id).text('Waiting..');
         });
         processIdsSequentially(selected_boheck);
+    });
+
+    $(".bkncpt-sync-drive").click(function() {
+        var table = $('#activities-table').DataTable();
+        var selection = bkncptCollectActivityIds(table);
+        var productListId = $("#product_list_id").val();
+        var button = $(this);
+
+        button.prop('disabled', true).text('Syncing...');
+
+        $.ajax({
+            type: "POST",
+            url: bkncpt_import_script_vars.ajaxurl,
+            dataType: 'json',
+            data: {
+                action: "bkncpt_sync_drive_images",
+                product_list_id: productListId,
+                nonce: bkncpt_import_script_vars.nonce,
+                data_only: selection.dataOnly,
+                selected_boheck: selection.ids
+            },
+            success: function(response) {
+                if (response && response.success) {
+                    var summary = response.data || {};
+                    var message = 'Image sync completed.';
+                    if (summary.message) {
+                        message = summary.message;
+                    } else {
+                        message = 'Image sync completed. Folders created: ' + (summary.folders_created || 0) + ', uploaded: ' + (summary.files_uploaded || 0) + ', skipped: ' + (summary.files_skipped || 0) + '.';
+                    }
+                    alert(message);
+                } else if (response && response.data && response.data.message) {
+                    alert(response.data.message);
+                } else {
+                    alert('Failed to sync images to Google Drive.');
+                }
+            },
+            error: function() {
+                alert('Failed to sync images to Google Drive.');
+            },
+            complete: function() {
+                button.prop('disabled', false).text('Sync Images to Google Drive');
+            }
+        });
     });
 
     /* 

@@ -884,15 +884,21 @@ function bkncpt_manage_keys_page() {
         update_option('bokun_api_key', '');
         update_option('bokun_secret_key', '');
         update_option('bokun_post_type', '');
+        update_option('bkncpt_google_service_account_email', '');
+        update_option('bkncpt_google_private_key', '');
+        update_option('bkncpt_google_drive_parent_folder_id', '');
         echo '<div class="updated"><p>Keys reset successfully!</p></div>';
         header("Location: admin.php?page=bokun-manage-keys");
         die;
     }
-    
+
     // Load the saved keys from options
     $api_key = get_option('bokun_api_key', '');
     $secret_key = get_option('bokun_secret_key', '');
     $bokun_post_type = get_option('bokun_post_type', '');
+    $google_service_account_email = get_option('bkncpt_google_service_account_email', '');
+    $google_private_key = get_option('bkncpt_google_private_key', '');
+    $google_drive_parent_folder = get_option('bkncpt_google_drive_parent_folder_id', '');
     
     // Check if the form is submitted
     if (isset($_POST['submit'])) {
@@ -904,11 +910,17 @@ function bkncpt_manage_keys_page() {
         $api_key = sanitize_text_field($_POST['api_key']);
         $secret_key = sanitize_text_field($_POST['secret_key']);
         $bokun_post_type = sanitize_text_field($_POST['bokun_post_type']);
+        $google_service_account_email = sanitize_email($_POST['google_service_account_email']);
+        $google_private_key = sanitize_textarea_field($_POST['google_private_key']);
+        $google_drive_parent_folder = sanitize_text_field($_POST['google_drive_parent_folder']);
 
         // Update options with the new keys
         update_option('bokun_api_key', $api_key);
         update_option('bokun_secret_key', $secret_key);
         update_option('bokun_post_type', $bokun_post_type);
+        update_option('bkncpt_google_service_account_email', $google_service_account_email);
+        update_option('bkncpt_google_private_key', $google_private_key);
+        update_option('bkncpt_google_drive_parent_folder_id', $google_drive_parent_folder);
 
         echo '<div class="updated"><p>Keys updated successfully!</p></div>';
         header("Location: admin.php?page=bokun-auth-check");
@@ -960,6 +972,34 @@ function bkncpt_manage_keys_page() {
                             echo '<option value="'.esc_html($post_key).'" '.selected($bokun_post_type, $post_key).'>'.esc_html(ucfirst($post_type)).'</option>';
                         }                        
                 echo '</select>
+                    </td>
+                </tr>
+                <tr class="form-field">
+                    <th scope="row">
+                        <label for="google_service_account_email">Google Service Account Email:</label>
+                    </th>
+                    <td>
+                        <input name="google_service_account_email" type="email" value="' . esc_attr($google_service_account_email) . '" autocapitalize="none" autocorrect="off" autocomplete="off" placeholder="service-account@project.iam.gserviceaccount.com">
+                        <p class="description">Used to authenticate with Google Drive.</p>
+                    </td>
+                </tr>
+                <tr class="form-field">
+                    <th scope="row">
+                        <label for="google_private_key">Google Private Key:</label>
+                    </th>
+                    <td>
+                        <textarea name="google_private_key" rows="8" cols="50" placeholder="-----BEGIN PRIVATE KEY-----
+..." autocomplete="off">' . esc_textarea($google_private_key) . '</textarea>
+                        <p class="description">Paste the private key from your Google service account JSON.</p>
+                    </td>
+                </tr>
+                <tr class="form-field">
+                    <th scope="row">
+                        <label for="google_drive_parent_folder">Google Drive Parent Folder ID:</label>
+                    </th>
+                    <td>
+                        <input name="google_drive_parent_folder" type="text" value="' . esc_attr($google_drive_parent_folder) . '" autocapitalize="none" autocorrect="off" autocomplete="off" placeholder="Root folder ID for product images">
+                        <p class="description">All product folders will be created inside this Drive folder.</p>
                     </td>
                 </tr>
             </tbody>
