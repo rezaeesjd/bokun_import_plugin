@@ -88,8 +88,8 @@ function bkncpt_custom_box_details( $post ) {
             if(!is_array($value)) {
 
                 echo '<tr>';
-                echo '<td class="bokun_field_value">' . esc_html($field) . '</td>';                    
-                echo '<td class="bokun_field_value"><span class="bokin-content">' . esc_html(strip_tags($value)) . '</span></td>';                    
+                echo '<td class="bokun_field_value">' . esc_html($field) . '</td>';
+                echo '<td class="bokun_field_value"><span class="bokin-content">' . wp_kses_post($value) . '</span></td>';
                 echo '</tr>';
             } else {
 
@@ -883,6 +883,41 @@ function bkncpt_custom_box_html( $post ) {
     
 }
 
+function bkncpt_meta_allows_html( $meta_key ) {
+    $explicit_html_keys = array(
+        'bk_description',
+        'bk_attention',
+        'bk_summary',
+        'bk_body',
+        'bk_excerpt',
+        'bk_included',
+        'bk_notIncluded',
+        'bk_shortDescription',
+        'bk_longDescription',
+    );
+
+    if ( in_array( $meta_key, $explicit_html_keys, true ) ) {
+        return true;
+    }
+
+    $pattern_matches = array(
+        'description',
+        'body',
+        'html',
+        'excerpt',
+        'attention',
+        'content',
+    );
+
+    foreach ( $pattern_matches as $pattern ) {
+        if ( false !== stripos( $meta_key, $pattern ) ) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 function bkncpt_save_custom_metabox(){
 
     global $post;
@@ -909,15 +944,22 @@ function bkncpt_save_custom_metabox(){
     $bkncpt_bk_values = get_post_meta( $post->ID );
     if(isset($bkncpt_bk_values) && !empty($bkncpt_bk_values)) {
         foreach ($bkncpt_bk_values as $bk_post_key => $bk_post_value) {
-            if (is_array($bk_post_value[0]) || is_object($bk_post_value[0])) {
-                $output_value = '11';
-            } else {
-                $output_value = $bk_post_value[0];
+            if ( ! isset( $_POST[ $bk_post_key ] ) ) {
+                continue;
             }
-            update_post_meta($post->ID, $bk_post_key, sanitize_text_field($_POST[$bk_post_key]));
+
+            $raw_value = wp_unslash( $_POST[ $bk_post_key ] );
+
+            if ( bkncpt_meta_allows_html( $bk_post_key ) ) {
+                $sanitized_value = wp_kses_post( $raw_value );
+            } else {
+                $sanitized_value = sanitize_text_field( $raw_value );
+            }
+
+            update_post_meta( $post->ID, $bk_post_key, $sanitized_value );
         }
     }
-    
+
 }
  
 add_action('save_post', 'bkncpt_save_custom_metabox');

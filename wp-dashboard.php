@@ -82,7 +82,7 @@ function view_bkncpt_data_details() {
 
                                                 echo '<tr>';
                                                 echo '<td class="bokun_field_value">' . esc_html($field) . '</td>';                    
-                                                echo '<td class="bokun_field_value"><span class="bokin-content">' . esc_html(strip_tags($value)) . '</span></td>';                    
+                                                echo '<td class="bokun_field_value"><span class="bokin-content">' . wp_kses_post($value) . '</span></td>';
                                                 echo '</tr>';
                                             } else {
 
