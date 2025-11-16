@@ -20,10 +20,8 @@ jQuery(document).ready(function($) {
 
     function bkncptCollectActivityIds(table) {
         var ids = [];
-        var dataOnly = 0;
 
         if ($('.bokun_post_cb:checked').length > 0) {
-            dataOnly = 1;
             ids = $('.bokun_post_cb:checked').map(function() { return $(this).val(); }).get();
         } else {
             if (table) {
@@ -37,8 +35,7 @@ jQuery(document).ready(function($) {
         }
 
         return {
-            ids: ids,
-            dataOnly: dataOnly
+            ids: ids
         };
     }
 
@@ -121,12 +118,13 @@ jQuery(document).ready(function($) {
                         callNextAjax(); // Call the next AJAX Even failed function recursively
                     });
             } else {
+                importButton.removeClass('bkncpt-button-inprogress');
+                importButton.addClass('bkncpt-button-success');
+                $('.progress-text').removeClass('bkncpt-hide').text('Import completed');
                 setTimeout(function() {
-                    $('.import-all-activities').text('Success');
-                    $('.progress-text').removeClass('bkncpt-hide');
-                }, 3000);
-                $('.import-all-activities').removeClass('bkncpt-button-inprogress');
-                $('.import-all-activities').addClass('bkncpt-button-success');
+                    importButton.removeClass('bkncpt-button-success');
+                    importButton.text('Import Selected / All');
+                }, 2500);
             }
         }
 
@@ -136,58 +134,14 @@ jQuery(document).ready(function($) {
         var table = $('#activities-table').DataTable();
         var selection = bkncptCollectActivityIds(table);
         var selected_boheck = selection.ids;
-        var data_only = selection.dataOnly;
-        $('.import-all-activities').text('Inprogress...');
+        $('.import-all-activities').text('Importing...');
         $('.import-all-activities').addClass('bkncpt-button-inprogress');
-        $('.bkncpt-progress-bar').removeClass('bkncpt-hide');
+        $('.bkncpt-progress-bar').removeClass('bkncpt-hide').val(0);
+        $('.progress-text').removeClass('bkncpt-hide').text('Preparing import...');
         $.each(selected_boheck, function(index, id) {
-            $('.import-activity-' + id).text('Waiting..');
+            $('.import-activity-' + id).text('Queued');
         });
         processIdsSequentially(selected_boheck);
-    });
-
-    $(".bkncpt-sync-drive").click(function() {
-        var table = $('#activities-table').DataTable();
-        var selection = bkncptCollectActivityIds(table);
-        var productListId = $("#product_list_id").val();
-        var button = $(this);
-
-        button.prop('disabled', true).text('Syncing...');
-
-        $.ajax({
-            type: "POST",
-            url: bkncpt_import_script_vars.ajaxurl,
-            dataType: 'json',
-            data: {
-                action: "bkncpt_sync_drive_images",
-                product_list_id: productListId,
-                nonce: bkncpt_import_script_vars.nonce,
-                data_only: selection.dataOnly,
-                selected_boheck: selection.ids
-            },
-            success: function(response) {
-                if (response && response.success) {
-                    var summary = response.data || {};
-                    var message = 'Image sync completed.';
-                    if (summary.message) {
-                        message = summary.message;
-                    } else {
-                        message = 'Image sync completed. Folders created: ' + (summary.folders_created || 0) + ', uploaded: ' + (summary.files_uploaded || 0) + ', skipped: ' + (summary.files_skipped || 0) + '.';
-                    }
-                    alert(message);
-                } else if (response && response.data && response.data.message) {
-                    alert(response.data.message);
-                } else {
-                    alert('Failed to sync images to Google Drive.');
-                }
-            },
-            error: function() {
-                alert('Failed to sync images to Google Drive.');
-            },
-            complete: function() {
-                button.prop('disabled', false).text('Sync Images to Google Drive');
-            }
-        });
     });
 
     /* 

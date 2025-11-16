@@ -92,8 +92,8 @@ function bkncpt_display_product_lists_dropdown($selectedListId) {
         return;
     }
 
-    echo '<label for="product_list_id">Product List: </label>';
-    echo '<select name="product_list_id" id="product_list_id">';
+    echo '<label for="product_list_id" class="bkncpt-field-label">' . esc_html__( 'Product List', 'import-bokun-to-wp-ecommerce-and-custom-fileds' ) . '</label>';
+    echo '<select name="product_list_id" id="product_list_id" class="bkncpt-select">';
     
     foreach ($productLists as $productList) {
         $selected = selected($selectedListId, $productList['id'], false);
@@ -151,6 +151,80 @@ function bkncpt_get_activities_in_product_list($listId) {
     }
 
     return array('error' => 'No activities found in the product list');
+}
+
+function bkncpt_render_activity_table_headers($allowfilelds, $firstActivity) {
+    if (!$firstActivity) {
+        return '';
+    }
+
+    ob_start();
+    foreach ($firstActivity as $field => $value) {
+        if (array_key_exists($field, $allowfilelds)) {
+            echo '<th scope="col"><span>' . esc_html($allowfilelds[$field]) . '</span></th>';
+        }
+    }
+
+    return ob_get_clean();
+}
+
+function bkncpt_render_activity_row($activity, $allowfilelds, $productListId) {
+    if (!isset($activity['id'])) {
+        return '';
+    }
+
+    $activityId = sanitize_text_field($activity['id']);
+    $activityTitle = isset($activity['title']) ? $activity['title'] : '';
+    $view_href = add_query_arg(
+        array(
+            'page' => 'bokun-item-details',
+            'productListId' => $productListId,
+            'id' => $activityId,
+        ),
+        admin_url('admin.php')
+    );
+
+    ob_start();
+    ?>
+    <tr>
+        <td class="bokun_field_value">
+            <input class="bokun_post_cb" type="checkbox" name="bokun_post[]" value="<?php echo esc_attr($activityId); ?>">
+        </td>
+        <td>
+            <button class="button button-primary import-activity import-activity-<?php echo esc_attr($activityId); ?>" data-activity-title="<?php echo esc_attr($activityTitle); ?>" data-activity-id="<?php echo esc_attr($activityId); ?>"><?php esc_html_e('Import', 'import-bokun-to-wp-ecommerce-and-custom-fileds'); ?></button>
+        </td>
+        <td><?php echo esc_html($activityId); ?></td>
+        <td class="bokun_field_value"><?php echo esc_html($activityTitle); ?></td>
+        <?php foreach ($activity as $field => $value) :
+            if (!array_key_exists($field, $allowfilelds)) {
+                continue;
+            }
+
+            if ($field === 'photos' && is_array($value)) : ?>
+                <td class="bokun_thum_container">
+                    <?php foreach ($value as $photo) :
+                        if (isset($photo['originalUrl'])) : ?>
+                            <img src="<?php echo esc_url($photo['originalUrl']); ?>" alt="<?php echo esc_attr($activityTitle); ?>" class="bokul_image" />
+                        <?php endif;
+                    endforeach; ?>
+                </td>
+            <?php else :
+                $display_value = is_array($value) ? wp_json_encode($value) : $value;
+                if ($display_value === false) {
+                    $display_value = '';
+                }
+                ?>
+                <td class="bokun_field_value"><?php echo esc_html($display_value); ?></td>
+            <?php endif;
+        endforeach; ?>
+        <td>
+            <a href="<?php echo esc_url($view_href); ?>" class="button button-secondary">
+                <?php esc_html_e('View', 'import-bokun-to-wp-ecommerce-and-custom-fileds'); ?>
+            </a>
+        </td>
+    </tr>
+    <?php
+    return ob_get_clean();
 }
 
 function bkncpt_get_booking_list() {
@@ -240,144 +314,103 @@ function bkncpt_get_booking_list() {
 }
 // Function to display the result on the admin page
 function bkncpt_bokun_auth_check_page() {
-    
+
     if( BOKUN_API_KEY == '' || BOKUN_SECRET_KEY == '') {
         header("Location: admin.php?page=bokun-manage-keys");
         die;
     } else {
-        // Default product list ID
         $defaultProductListId = 66035;
-        
-        // Check if the form is submitted
+
         if (isset($_POST['product_list_id'])) {
             if ( ! wp_verify_nonce( $_POST['_wpnonce'], '_wpnonce_bokun-list' ) ) {
                 return;
-                // Anything that you want to display for unauthorized action
-            } 
-            // Use the submitted product list ID if available
+            }
             $productListId = sanitize_text_field($_POST['product_list_id']);
         } else {
-            // Use the default product list ID
             $productListId = $defaultProductListId;
         }
+
         $allowfilelds = array(
-            // 'id' => 'ID',
-            'externalId' => "Externale Id",
-            'productCategory' => "Product Category",
+            'externalId' => __( 'External ID', 'import-bokun-to-wp-ecommerce-and-custom-fileds' ),
+            'productCategory' => __( 'Product Category', 'import-bokun-to-wp-ecommerce-and-custom-fileds' ),
         );
-        // Get product list title and activities
+
         $productListTitle = bkncpt_get_product_list_title($productListId);
         $activitiesInProductList = bkncpt_get_activities_in_product_list($productListId);
 
-        echo '<div class="wrap">';
-        echo '<h1>';
-        esc_html_e( 'Bo heck', 'import-bokun-to-wp-ecommerce-and-custom-fileds' );
-        echo '</h1>';
-
-        // Add a form for dynamic product list ID
-        echo '<form method="post" action="">';
-        esc_html(wp_nonce_field('_wpnonce_bokun-list'));
-        // Display product lists dropdown
+        echo '<div class="wrap bkncpt-dashboard">';
+        echo '<div class="bkncpt-card">';
+        echo '<div class="bkncpt-card__header">';
+        echo '<h1>' . esc_html__( 'Bokun Activity Importer', 'import-bokun-to-wp-ecommerce-and-custom-fileds' ) . '</h1>';
+        echo '<p class="bkncpt-description">' . esc_html__( 'Review activities pulled from Bokun, then import them as posts or products inside WordPress.', 'import-bokun-to-wp-ecommerce-and-custom-fileds' ) . '</p>';
+        echo '</div>';
+        echo '<form method="post" action="" class="bkncpt-controls">';
+        wp_nonce_field('_wpnonce_bokun-list');
+        echo '<div class="bkncpt-form-row">';
         bkncpt_display_product_lists_dropdown($productListId);
-
-        echo '<input type="submit" class="button page-title-action" value="'.esc_html( 'Retrieve Activities', 'import-bokun-to-wp-ecommerce-and-custom-fileds' ).'">';
+        echo '<button type="submit" class="button button-primary">' . esc_html__( 'Refresh Activities', 'import-bokun-to-wp-ecommerce-and-custom-fileds' ) . '</button>';
+        echo '</div>';
         echo '</form>';
-
-        echo '<p>'.esc_html( 'Product List Title:', 'import-bokun-to-wp-ecommerce-and-custom-fileds' ).'<strong>' . esc_attr(strtoupper($productListTitle)) . '</strong></p>';
+        echo '<div class="bkncpt-meta">';
+        echo '<span class="bkncpt-meta__label">' . esc_html__( 'Product List', 'import-bokun-to-wp-ecommerce-and-custom-fileds' ) . '</span>';
+        echo '<span class="bkncpt-meta__value">' . esc_html( strtoupper($productListTitle) ) . '</span>';
+        echo '</div>';
+        echo '</div>';
 
         if (isset($activitiesInProductList['error'])) {
-            echo '<p>' . esc_attr($activitiesInProductList['error']) . '</p>';
+            echo '<div class="notice notice-error"><p>' . esc_html($activitiesInProductList['error']) . '</p></div>';
         } else {
-            echo '<table id="activities-table" class="wp-list-table widefat fixed striped table-view-list ">';
+            $firstActivity = reset($activitiesInProductList);
+            $totalActivities = is_array($activitiesInProductList) ? count($activitiesInProductList) : 0;
+
+            echo '<div class="bkncpt-table-card">';
+            echo '<div class="bkncpt-toolbar">';
+            echo '<div class="bkncpt-toolbar__info">';
+            echo '<strong>' . sprintf( esc_html__( '%d activities loaded', 'import-bokun-to-wp-ecommerce-and-custom-fileds' ), intval($totalActivities) ) . '</strong>';
+            echo '<span>' . esc_html__( 'Select rows to import specific activities or leave them unchecked to import the full list.', 'import-bokun-to-wp-ecommerce-and-custom-fileds' ) . '</span>';
+            echo '</div>';
+            echo '<div class="bkncpt-toolbar__actions">';
+            echo '<button class="button button-primary import-all-activities" data-only="0">' . esc_html__( 'Import Selected / All', 'import-bokun-to-wp-ecommerce-and-custom-fileds' ) . '</button>';
+            echo '</div>';
+            echo '</div>';
+
+            echo '<div class="bkncpt-table__wrapper">';
+            echo '<table id="activities-table" class="wp-list-table widefat fixed striped table-view-list bkncpt-table">';
             echo '<thead>';
             echo '<tr>';
             echo '<th id="cb" class="bkncpt-checkbox manage-column column-cb check-column"><input id="cb-select-all-1" class="select_all" type="checkbox"></th>';
-            echo '<th class="manage-column column-cb" scope="col"><a href="javascript:;"><span>'.esc_html( 'Action', 'import-bokun-to-wp-ecommerce-and-custom-fileds' ).'</span></a></th>';
-            echo '<th class="manage-column column-cb" scope="col"><a href="javascript:;"><span>'.esc_html( 'Product ID', 'import-bokun-to-wp-ecommerce-and-custom-fileds' ).'</span></a></th>';
-            echo '<th class="manage-column column-cb" scope="col"><a href="javascript:;"><span>'.esc_html( 'Activity Title', 'import-bokun-to-wp-ecommerce-and-custom-fileds' ).'</span></a></th>';
-            
-            // Get the list of fields dynamically from the first activity
-            $firstActivity = reset($activitiesInProductList);
-            if ($firstActivity) {
-                foreach ($firstActivity as $field => $value) {
-                    if(array_key_exists($field, $allowfilelds)) {                    
-                        $field1 = $allowfilelds[$field];
-                        echo '<th class="manage-column column-cb" scope="col"><a href="javascript:;"><span>' . esc_html($field1) . '</span></a></th>';
-                    }
-                }
-            }
-            echo '<th scope="col"><a href="javascript:;"><span>'.esc_html( 'View Details', 'import-bokun-to-wp-ecommerce-and-custom-fileds' ).'</span></a></th>';
+            echo '<th class="manage-column column-cb" scope="col"><span>' . esc_html__( 'Action', 'import-bokun-to-wp-ecommerce-and-custom-fileds' ) . '</span></th>';
+            echo '<th class="manage-column column-cb" scope="col"><span>' . esc_html__( 'Product ID', 'import-bokun-to-wp-ecommerce-and-custom-fileds' ) . '</span></th>';
+            echo '<th class="manage-column column-cb" scope="col"><span>' . esc_html__( 'Activity Title', 'import-bokun-to-wp-ecommerce-and-custom-fileds' ) . '</span></th>';
+            echo bkncpt_render_activity_table_headers($allowfilelds, $firstActivity);
+            echo '<th scope="col"><span>' . esc_html__( 'View Details', 'import-bokun-to-wp-ecommerce-and-custom-fileds' ) . '</span></th>';
             echo '</tr>';
             echo '</thead>';
             echo '<tfoot>';
             echo '<tr>';
-            echo '<th id="cb" class="bkncpt-checkbox manage-column column-cb check-column"><input id="cb-select-all-1" class="select_all" type="checkbox"></th>';
-            echo '<th scope="col"><a href="javascript:;"><span>'.esc_html( 'Action', 'import-bokun-to-wp-ecommerce-and-custom-fileds' ).'</span></a></th>';
-            echo '<th scope="col"><a href="javascript:;"><span>'.esc_html( 'Product ID', 'import-bokun-to-wp-ecommerce-and-custom-fileds' ).'</span></a></th>';
-            echo '<th scope="col"><a href="javascript:;"><span>'.esc_html( 'Activity Title', 'import-bokun-to-wp-ecommerce-and-custom-fileds' ).'</span></a></th>';
-
-            // Get the list of fields dynamically from the first activity
-            $firstActivity = reset($activitiesInProductList);
-            if ($firstActivity) {
-                foreach ($firstActivity as $field => $value) {
-                    if(array_key_exists($field, $allowfilelds)) {                    
-                        $field1 = $allowfilelds[$field];
-                        echo '<th scope="col"><a href="javascript:;"><span>' . esc_html($field1) . '</span></a></th>';
-                    }
-                }
-            }
-            echo '<th scope="col"><a href="javascript:;"><span>'.esc_html( 'View Details', 'import-bokun-to-wp-ecommerce-and-custom-fileds' ).'</span></a></th>';
+            echo '<th class="bkncpt-checkbox manage-column column-cb check-column"><input id="cb-select-all-2" class="select_all" type="checkbox"></th>';
+            echo '<th scope="col"><span>' . esc_html__( 'Action', 'import-bokun-to-wp-ecommerce-and-custom-fileds' ) . '</span></th>';
+            echo '<th scope="col"><span>' . esc_html__( 'Product ID', 'import-bokun-to-wp-ecommerce-and-custom-fileds' ) . '</span></th>';
+            echo '<th scope="col"><span>' . esc_html__( 'Activity Title', 'import-bokun-to-wp-ecommerce-and-custom-fileds' ) . '</span></th>';
+            echo bkncpt_render_activity_table_headers($allowfilelds, $firstActivity);
+            echo '<th scope="col"><span>' . esc_html__( 'View Details', 'import-bokun-to-wp-ecommerce-and-custom-fileds' ) . '</span></th>';
             echo '</tr>';
             echo '</tfoot>';
             echo '<tbody id="the-list">';
-            $rowCount = 0;
-            foreach ($activitiesInProductList as $activity) {
-                $rowCount++;
 
-                echo '<tr>';
-                echo '<td class="bokun_field_value"><input class="bokun_post_cb" type="checkbox" name="bokun_post[]" value="'.$activity['id'].'"></td>';
-                echo '<td><button class="button page-title-action import-activity import-activity-' . esc_attr($activity['id']) . ' " data-activity-title="' . esc_attr($activity['title']) . '" data-activity-id="' . esc_attr($activity['id']) . '">'.esc_html( 'Import', 'import-bokun-to-wp-ecommerce-and-custom-fileds' ).'</button></td>';
-                echo '<td>' . esc_html($activity['id']) . '</td>';
-                echo '<td class="bokun_field_value">' . esc_html($activity['title']) . '</td>';
-                // Display values for all fields
-                $view_href = 'admin.php?page=bokun-item-details&productListId='.$productListId.'&id='.esc_attr($activity['id']);
-                foreach ($activity as $field => $value) {
-                    if(array_key_exists($field, $allowfilelds)) { 
-                        
-                        if ($field === 'photos' && is_array($value)) {
-                            // If it's the 'photos' field and it's an array, extract and display URLs
-                            echo '<td class="bokun_thum_container">';
-                            foreach ($value as $photo) {
-                                if (isset($photo['originalUrl'])) {
-                                    //echo '<img src="' . esc_url($photo['originalUrl']) . '" alt="Photo" class="bokul_image">';
-                                }
-                            }
-                            echo '</td>';
-                        } else {
-                            if(!is_array($value)) {}
-                            echo '<td class="bokun_field_value">' . esc_html($value) . '</td>';                    
-                            // Display other fields as usual
-                            // echo '<td class="bokun_field_value">' . esc_html($value) . '</td>';
-                        }
-                    }
-                }
-                echo '<td><a href="'.$view_href.'" class="button page-title-action" >'.esc_html( 'View', 'import-bokun-to-wp-ecommerce-and-custom-fileds' ).'</a></td>';
-                echo '</tr>';
+            foreach ($activitiesInProductList as $activity) {
+                echo bkncpt_render_activity_row($activity, $allowfilelds, $productListId);
             }
 
             echo '</tbody>';
             echo '</table>';
-
-            // Import All button and Drive sync action
-            echo '<div class="bkncpt-bulk-actions">';
-            echo '<button class="button import-all-activities" data-only="0" >'.esc_html( 'Import All', 'import-bokun-to-wp-ecommerce-and-custom-fileds' ).'</button>';
-            echo ' <button class="button bkncpt-sync-drive" data-only="0">' . esc_html__( 'Sync Images to Google Drive', 'import-bokun-to-wp-ecommerce-and-custom-fileds' ) . '</button>';
             echo '</div>';
-            echo '<div class="progress-wrapper">';
-            echo '            <progress class="bkncpt-progress-bar bkncpt-hide" max="100" value="0"></progress>';
-            echo '            <span class="progress-text bkncpt-hide">0%</span>';
-            echo '          </div>';
-            
+
+            echo '<div class="bkncpt-progress">';
+            echo '<progress class="bkncpt-progress-bar bkncpt-hide" max="100" value="0"></progress>';
+            echo '<span class="progress-text bkncpt-hide">0%</span>';
+            echo '</div>';
+            echo '</div>';
         }
 
         echo '</div>';
@@ -467,7 +500,7 @@ function bkncpt_bokun_booking_list() {
 
         // Add a form for dynamic product list ID
         echo '<form method="post" action="">';
-        esc_html(wp_nonce_field('_wpnonce_bokun-list'));
+        wp_nonce_field('_wpnonce_bokun-list');
         // Display product lists dropdown
         bkncpt_display_product_lists_dropdown($productListId);
 
@@ -559,10 +592,8 @@ function bkncpt_bokun_booking_list() {
             echo '</tbody>';
             echo '</table>';
 
-            // Import All button and Drive sync action
             echo '<div class="bkncpt-bulk-actions">';
             echo '<button class="button import-all-activities" data-only="0" >'.esc_html( 'Import All', 'import-bokun-to-wp-ecommerce-and-custom-fileds' ).'</button>';
-            echo ' <button class="button bkncpt-sync-drive" data-only="0">' . esc_html__( 'Sync Images to Google Drive', 'import-bokun-to-wp-ecommerce-and-custom-fileds' ) . '</button>';
             echo '</div>';
             echo '<div class="progress-wrapper">';
             echo '            <progress class="bkncpt-progress-bar bkncpt-hide" max="100" value="0"></progress>';
