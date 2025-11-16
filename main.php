@@ -384,6 +384,26 @@ function bkncpt_bokun_auth_check_page() {
     }
 }
 
+function bkncpt_get_bokun_widget_html() {
+    global $post;
+
+    if (!$post instanceof WP_Post) {
+        return '';
+    }
+
+    $custom_field_value = get_post_meta($post->ID, 'bk_actualId', true);
+    if (!$custom_field_value) {
+        return '';
+    }
+
+    $widget_html  = '<div class="bokunWidget" data-src="https://widgets.bokun.io/online-sales/0bae61d4-b5ab-4e33-833d-d912b558805c/experience-calendar/' . esc_attr($custom_field_value) . '"></div>';
+    $widget_html .= '<noscript>' . esc_html__('Please enable javascript in your browser to book', 'import-bokun-to-wp-ecommerce-and-custom-fileds') . '</noscript>';
+
+    return $widget_html;
+}
+
+add_shortcode('bokun_widget', 'bkncpt_get_bokun_widget_html');
+
 
 // Enqueue DataTables library and script in the admin footer
 function enqueue_bkncpt_scripts() {
