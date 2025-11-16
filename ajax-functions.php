@@ -1210,6 +1210,9 @@ function bkncpt_save_custom_metabox(){
 add_action('save_post', 'bkncpt_save_custom_metabox');
 // Function to process activity data and update post meta
 function bkncpt_process_activity_data($activity, $product_id) {
+    $agenda_items_data = isset($activity['agendaItems']) ? $activity['agendaItems'] : array();
+    $start_points_data = array();
+
     // Add all fields as custom fields with "bk_" prefix
     foreach ($activity as $field => $value) {
         // Use "bk_" prefix for custom fields
@@ -1258,6 +1261,7 @@ function bkncpt_process_activity_data($activity, $product_id) {
         // Extract and save meeting point information
         if (isset($activity['startPoints'])) {
             $startPoints = maybe_unserialize($activity['startPoints']);
+            $start_points_data = is_array($startPoints) ? $startPoints : array();
 
             if (!empty($startPoints) && is_array($startPoints)) {
                 foreach ($startPoints as $index => $meetingPoint) {
@@ -1308,7 +1312,9 @@ function bkncpt_process_activity_data($activity, $product_id) {
                 update_post_meta($product_id, 'bk_meetingpointtitle', $activity['startPoints']);
             }
         }
-         
+
+    bkncpt_store_combined_geo_points_meta($product_id, $start_points_data);
+
 
 // Assuming $activity is your array containing 'googlePlace'
 if (isset($activity['googlePlace'])) {
@@ -1330,6 +1336,175 @@ if (isset($activity['googlePlace'])) {
         $content .= '<br><br>';
         $content .= get_post_field('post_content', $product_id); // Get existing content
         wp_update_post(array('ID' => $product_id, 'post_content' => $content)); // Update content
+    }
+
+    bkncpt_save_agenda_items_html($product_id, $agenda_items_data);
+    bkncpt_save_inclusions_list($product_id, isset($activity['included']) ? $activity['included'] : '');
+    bkncpt_format_description_meta($product_id, isset($activity['description']) ? $activity['description'] : '');
+    bkncpt_clean_attention_field($product_id, isset($activity['attention']) ? $activity['attention'] : '');
+    bkncpt_save_start_times_meta($product_id, isset($activity['startTimes']) ? $activity['startTimes'] : null);
+}
+
+/**
+ * Store combined latitude and longitude meta for each start point.
+ */
+function bkncpt_store_combined_geo_points_meta($product_id, $start_points) {
+    $existing_meta = get_post_meta($product_id);
+    foreach ($existing_meta as $meta_key => $values) {
+        if (strpos($meta_key, 'bk_meetingpoint_combined_geoPoint_') === 0) {
+            delete_post_meta($product_id, $meta_key);
+        }
+    }
+
+    if (empty($start_points) || !is_array($start_points)) {
+        return;
+    }
+
+    foreach ($start_points as $index => $meeting_point) {
+        $latitude  = isset($meeting_point['address']['geoPoint']['latitude']) ? $meeting_point['address']['geoPoint']['latitude'] : '';
+        $longitude = isset($meeting_point['address']['geoPoint']['longitude']) ? $meeting_point['address']['geoPoint']['longitude'] : '';
+        $meta_key  = 'bk_meetingpoint_combined_geoPoint_' . $index;
+
+        if ($latitude !== '' && $longitude !== '') {
+            $combined = sanitize_text_field($latitude) . ',' . sanitize_text_field($longitude);
+            update_post_meta($product_id, $meta_key, $combined);
+        }
+    }
+}
+
+/**
+ * Build and store agenda items HTML.
+ */
+function bkncpt_save_agenda_items_html($product_id, $agenda_items) {
+    if (empty($agenda_items) || !is_array($agenda_items)) {
+        delete_post_meta($product_id, 'agenda_items_html');
+        return;
+    }
+
+    $agenda_items_html = array();
+
+    foreach ($agenda_items as $item) {
+        $html = '<br><div class="agenda-item">';
+
+        if (!empty($item['location']['wholeAddress'])) {
+            $html .= '<p><span style="color: #ff5533;">&#x1F4CD;</span> ' . esc_html($item['location']['wholeAddress']) . '</p>';
+        }
+
+        if (!empty($item['body'])) {
+            $html .= '<p><strong>Description:</strong> ' . wp_kses_post($item['body']) . '</p>';
+        }
+
+        if (isset($item['location']['latitude']) && isset($item['location']['longitude'])) {
+            $latitude  = sanitize_text_field($item['location']['latitude']);
+            $longitude = sanitize_text_field($item['location']['longitude']);
+
+            if ($latitude !== '' && $longitude !== '') {
+                $map_url = 'https://maps.google.com/?q=' . rawurlencode($latitude . ',' . $longitude);
+                $html   .= '<a href="' . esc_url($map_url) . '" target="_blank" rel="noopener">' . esc_html__('Show map', 'import-bokun-to-wp-ecommerce-and-custom-fileds') . '</a><br><br>';
+            }
+        }
+
+        $html .= '</div><hr>';
+        $agenda_items_html[] = $html;
+    }
+
+    update_post_meta($product_id, 'agenda_items_html', implode('', $agenda_items_html));
+}
+
+/**
+ * Store formatted inclusions list.
+ */
+function bkncpt_save_inclusions_list($product_id, $raw_inclusions) {
+    if (empty($raw_inclusions) || !is_string($raw_inclusions)) {
+        delete_post_meta($product_id, 'bk_included_list');
+        return;
+    }
+
+    $normalized      = str_ireplace(array('<br />', '<br/>'), '<br>', $raw_inclusions);
+    $inclusion_items = array_filter(array_map('trim', explode('<br>', $normalized)));
+
+    if (empty($inclusion_items)) {
+        delete_post_meta($product_id, 'bk_included_list');
+        return;
+    }
+
+    $list_html = '<ul>';
+    foreach ($inclusion_items as $item) {
+        $list_html .= '<li>' . esc_html($item) . '</li>';
+    }
+    $list_html .= '</ul>';
+
+    update_post_meta($product_id, 'bk_included_list', $list_html);
+}
+
+/**
+ * Convert the description field into paragraph markup.
+ */
+function bkncpt_format_description_meta($product_id, $description) {
+    if ($description === '' || $description === null) {
+        delete_post_meta($product_id, 'bk_description');
+        return;
+    }
+
+    $parts = preg_split('/<br\s*\/?\s*>/i', $description);
+    $formatted = array();
+
+    foreach ($parts as $part) {
+        $part = trim(wp_kses_post($part));
+        if ($part !== '') {
+            $formatted[] = '<p>' . $part . '</p>';
+        }
+    }
+
+    if (!empty($formatted)) {
+        update_post_meta($product_id, 'bk_description', '<div>' . implode('', $formatted) . '</div>');
+    }
+}
+
+/**
+ * Clean up the attention field by removing empty list items and ensuring wrappers.
+ */
+function bkncpt_clean_attention_field($product_id, $attention) {
+    if ($attention === '' || $attention === null) {
+        delete_post_meta($product_id, 'bk_attention');
+        return;
+    }
+
+    $cleaned_attention = preg_replace('/<li>\s*<\/li>/i', '', $attention);
+
+    if (stripos($cleaned_attention, '<li') !== false) {
+        if (stripos($cleaned_attention, '<ul') === false) {
+            $cleaned_attention = '<ul>' . $cleaned_attention . '</ul>';
+        }
+    } else {
+        $cleaned_attention = '<ul></ul>';
+    }
+
+    update_post_meta($product_id, 'bk_attention', $cleaned_attention);
+}
+
+/**
+ * Store formatted start times per index for easier querying.
+ */
+function bkncpt_save_start_times_meta($product_id, $start_times) {
+    if (empty($start_times) || !is_array($start_times)) {
+        return;
+    }
+
+    foreach ($start_times as $index => $time) {
+        $time = is_object($time) ? (array) $time : $time;
+        if (!is_array($time)) {
+            continue;
+        }
+
+        if (isset($time['hour']) && isset($time['minute'])) {
+            $hour      = intval($time['hour']);
+            $minute    = intval($time['minute']);
+            $time_key  = 'bk_final_start_' . $index;
+            $formatted = sprintf('%d:%02d', $hour, $minute);
+
+            update_post_meta($product_id, $time_key, $formatted);
+        }
     }
 }
 // Function to import a single activity
