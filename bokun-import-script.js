@@ -63,6 +63,7 @@ jQuery(document).ready(function($) {
     $(".import-activity").click(function() {
         var activityTitle = $(this).data("activity-title");
         var activityId = $(this).data("activity-id");
+        var productListId = $("#product_list_id").val();
         $(this).text('Inprogress...');
         // $(this).attr('disabled', true);
         var this_val = this;
@@ -76,6 +77,7 @@ jQuery(document).ready(function($) {
                 activityId: activityId,
                 import_type: 'single',
                 nonce: bkncpt_import_script_vars.nonce,
+                product_list_id: productListId,
             },
             success: function(response) {
                 console.log(response);
