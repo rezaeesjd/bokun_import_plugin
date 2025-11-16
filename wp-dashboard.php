@@ -884,9 +884,6 @@ function bkncpt_manage_keys_page() {
         update_option('bokun_api_key', '');
         update_option('bokun_secret_key', '');
         update_option('bokun_post_type', '');
-        update_option('bkncpt_google_service_account_email', '');
-        update_option('bkncpt_google_private_key', '');
-        update_option('bkncpt_google_drive_parent_folder_id', '');
         echo '<div class="updated"><p>Keys reset successfully!</p></div>';
         header("Location: admin.php?page=bokun-manage-keys");
         die;
@@ -896,9 +893,6 @@ function bkncpt_manage_keys_page() {
     $api_key = get_option('bokun_api_key', '');
     $secret_key = get_option('bokun_secret_key', '');
     $bokun_post_type = get_option('bokun_post_type', '');
-    $google_service_account_email = get_option('bkncpt_google_service_account_email', '');
-    $google_private_key = get_option('bkncpt_google_private_key', '');
-    $google_drive_parent_folder = get_option('bkncpt_google_drive_parent_folder_id', '');
     
     // Check if the form is submitted
     if (isset($_POST['submit'])) {
@@ -910,17 +904,11 @@ function bkncpt_manage_keys_page() {
         $api_key = sanitize_text_field($_POST['api_key']);
         $secret_key = sanitize_text_field($_POST['secret_key']);
         $bokun_post_type = sanitize_text_field($_POST['bokun_post_type']);
-        $google_service_account_email = sanitize_email($_POST['google_service_account_email']);
-        $google_private_key = sanitize_textarea_field($_POST['google_private_key']);
-        $google_drive_parent_folder = sanitize_text_field($_POST['google_drive_parent_folder']);
 
         // Update options with the new keys
         update_option('bokun_api_key', $api_key);
         update_option('bokun_secret_key', $secret_key);
         update_option('bokun_post_type', $bokun_post_type);
-        update_option('bkncpt_google_service_account_email', $google_service_account_email);
-        update_option('bkncpt_google_private_key', $google_private_key);
-        update_option('bkncpt_google_drive_parent_folder_id', $google_drive_parent_folder);
 
         echo '<div class="updated"><p>Keys updated successfully!</p></div>';
         header("Location: admin.php?page=bokun-auth-check");
@@ -929,90 +917,52 @@ function bkncpt_manage_keys_page() {
 
     $custom_post_types = get_post_types(array('_builtin' => false));
     
-    // Display the form with current keys as placeholders
-    echo '<div class="wrap">';
-    echo '<h1>Manage Bokun API Keys</h1>';
-            echo '<div class="notice notice-info is-dismissible">';
-    echo '<p><strong>Notice:</strong> Please add a new API on your <a href="https://extranet.bokun.io/api-keys" target="_blank">Bokun dashboard</a>, and copy the API Key and Secret Key. Paste the keys into the form below.</p>';
-        echo '</div>';
-    echo '<form method="post" action="" id="bokul_api_form" >';    
-    esc_html(wp_nonce_field('_wpnonce_bokun-api'));
-    echo '<table class="form-table" role="presentation">
-            <tbody>
-                <tr class="form-field form-required">
-                    <th scope="row">
-                        <label for="user_login">API Key: <span class="description">(required)</span></label>
-                    </th>
-                    <td>
-                        <input name="api_key" type="text" value="' . esc_attr($api_key) . '" aria-required="true" autocapitalize="none" autocorrect="off" autocomplete="off" placeholder="Enter your API key" required>
-                    </td>
-                </tr>
-                <tr class="form-field form-required">
-                    <th scope="row">
-                        <label for="user_login">Secret Key: <span class="description">(required)</span></label>
-                    </th>
-                    <td>
-                        <input name="secret_key" type="text" value="' . esc_attr($secret_key) . '" aria-required="true" autocapitalize="none" autocorrect="off" autocomplete="off" placeholder="Enter your Secret key" required>
-                    </td>
-                </tr>
-                <tr class="form-field form-required">
-                    <th scope="row">
-                        <label for="user_login">Select Post Type: <span class="description">(required) 1</span></label>
-                    </th>
-                    <td>
-                    <select name="bokun_post_type" id="bokun_post_type" required>
-                        ';
-                        
-                        $custom_post_types = get_post_types(array('_builtin' => false));
-                        $custom_post_types['post'] = 'Default Post';
-                        $custom_post_types['product'] = 'Woocommerce Product';
-                        $custom_post_types['post'] = 'Blog';
-                        echo '<option value="">'.esc_html('Select Post Type').'</option>';
-                        foreach ($custom_post_types as $post_key => $post_type) {
-                            echo '<option value="'.esc_html($post_key).'" '.selected($bokun_post_type, $post_key).'>'.esc_html(ucfirst($post_type)).'</option>';
-                        }                        
-                echo '</select>
-                    </td>
-                </tr>
-                <tr class="form-field">
-                    <th scope="row">
-                        <label for="google_service_account_email">Google Service Account Email:</label>
-                    </th>
-                    <td>
-                        <input name="google_service_account_email" type="email" value="' . esc_attr($google_service_account_email) . '" autocapitalize="none" autocorrect="off" autocomplete="off" placeholder="service-account@project.iam.gserviceaccount.com">
-                        <p class="description">Used to authenticate with Google Drive.</p>
-                    </td>
-                </tr>
-                <tr class="form-field">
-                    <th scope="row">
-                        <label for="google_private_key">Google Private Key:</label>
-                    </th>
-                    <td>
-                        <textarea name="google_private_key" rows="8" cols="50" placeholder="-----BEGIN PRIVATE KEY-----
-..." autocomplete="off">' . esc_textarea($google_private_key) . '</textarea>
-                        <p class="description">Paste the private key from your Google service account JSON.</p>
-                    </td>
-                </tr>
-                <tr class="form-field">
-                    <th scope="row">
-                        <label for="google_drive_parent_folder">Google Drive Parent Folder ID:</label>
-                    </th>
-                    <td>
-                        <input name="google_drive_parent_folder" type="text" value="' . esc_attr($google_drive_parent_folder) . '" autocapitalize="none" autocorrect="off" autocomplete="off" placeholder="Root folder ID for product images">
-                        <p class="description">All product folders will be created inside this Drive folder.</p>
-                    </td>
-                </tr>
-            </tbody>
-        </table>';
-    echo '<p class="submit"><input type="submit" name="submit" id="" class="button button-primary" value="Save Keys"></p>';
+    echo '<div class="wrap bkncpt-dashboard">';
+    echo '<div class="bkncpt-card bkncpt-card--form">';
+    echo '<div class="bkncpt-card__header">';
+    echo '<h1>' . esc_html__( 'Manage Bokun API Keys', 'import-bokun-to-wp-ecommerce-and-custom-fileds' ) . '</h1>';
+    echo '<p class="bkncpt-description">' . esc_html__( 'Connect your Bokun workspace and choose where imported activities should be created inside WordPress.', 'import-bokun-to-wp-ecommerce-and-custom-fileds' ) . '</p>';
+    echo '</div>';
+    echo '<div class="notice notice-info"><p><strong>' . esc_html__( 'Need help?', 'import-bokun-to-wp-ecommerce-and-custom-fileds' ) . '</strong> ' . sprintf( wp_kses_post( __( 'Generate fresh API credentials from your <a href="%s" target="_blank" rel="noopener noreferrer">Bokun dashboard</a> and paste them below.', 'import-bokun-to-wp-ecommerce-and-custom-fileds' ) ), esc_url( 'https://extranet.bokun.io/api-keys' ) ) . '</p></div>';
+    echo '<form method="post" action="" id="bokul_api_form" class="bkncpt-settings-form">';
+    wp_nonce_field('_wpnonce_bokun-api');
+    echo '<div class="bkncpt-form-grid">';
+    echo '<div class="bkncpt-field-group">';
+    echo '<label for="api_key">' . esc_html__( 'API Key', 'import-bokun-to-wp-ecommerce-and-custom-fileds' ) . '</label>';
+    echo '<input name="api_key" id="api_key" type="text" value="' . esc_attr($api_key) . '" autocapitalize="none" autocorrect="off" autocomplete="off" placeholder="' . esc_attr__( 'Enter your API key', 'import-bokun-to-wp-ecommerce-and-custom-fileds' ) . '" required />';
+    echo '</div>';
+    echo '<div class="bkncpt-field-group">';
+    echo '<label for="secret_key">' . esc_html__( 'Secret Key', 'import-bokun-to-wp-ecommerce-and-custom-fileds' ) . '</label>';
+    echo '<input name="secret_key" id="secret_key" type="text" value="' . esc_attr($secret_key) . '" autocapitalize="none" autocorrect="off" autocomplete="off" placeholder="' . esc_attr__( 'Enter your secret key', 'import-bokun-to-wp-ecommerce-and-custom-fileds' ) . '" required />';
+    echo '</div>';
+    echo '<div class="bkncpt-field-group">';
+    echo '<label for="bokun_post_type">' . esc_html__( 'Destination Post Type', 'import-bokun-to-wp-ecommerce-and-custom-fileds' ) . '</label>';
+    echo '<select name="bokun_post_type" id="bokun_post_type" class="bkncpt-select" required>';
+    echo '<option value="">' . esc_html__( 'Select Post Type', 'import-bokun-to-wp-ecommerce-and-custom-fileds' ) . '</option>';
+    $custom_post_types = get_post_types(array('_builtin' => false));
+    $custom_post_types['post'] = 'Blog';
+    $custom_post_types['product'] = 'Woocommerce Product';
+    foreach ($custom_post_types as $post_key => $post_type) {
+        echo '<option value="' . esc_attr($post_key) . '" ' . selected($bokun_post_type, $post_key, false) . '>' . esc_html(ucfirst($post_type)) . '</option>';
+    }
+    echo '</select>';
+    echo '<p class="description">' . esc_html__( 'Imported activities will be created using this post type.', 'import-bokun-to-wp-ecommerce-and-custom-fileds' ) . '</p>';
+    echo '</div>';
+    echo '</div>';
+    echo '<div class="bkncpt-form-actions">';
+    echo '<button type="submit" name="submit" class="button button-primary">' . esc_html__( 'Save Keys', 'import-bokun-to-wp-ecommerce-and-custom-fileds' ) . '</button>';
+    echo '</div>';
     echo '</form>';
+    echo '</div>';
 
-    // Display the reset keys button
-    echo '<form method="post" action="">';
-    esc_html(wp_nonce_field('_wpnonce_bokun-api'));
-    echo '<input type="submit" name="reset_keys" class="button" value="Reset Keys">';
+    echo '<div class="bkncpt-card bkncpt-card--muted">';
+    echo '<h2>' . esc_html__( 'Reset Integration', 'import-bokun-to-wp-ecommerce-and-custom-fileds' ) . '</h2>';
+    echo '<p>' . esc_html__( 'Need to start from scratch? Resetting removes saved credentials and disables imports until new keys are provided.', 'import-bokun-to-wp-ecommerce-and-custom-fileds' ) . '</p>';
+    echo '<form method="post" action="" class="bkncpt-reset-form">';
+    wp_nonce_field('_wpnonce_bokun-api');
+    echo '<button type="submit" name="reset_keys" class="button button-secondary">' . esc_html__( 'Reset Keys', 'import-bokun-to-wp-ecommerce-and-custom-fileds' ) . '</button>';
     echo '</form>';
-
+    echo '</div>';
     echo '</div>';
 }
 ?>

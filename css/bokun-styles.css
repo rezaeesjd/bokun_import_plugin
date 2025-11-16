@@ -1,109 +1,221 @@
-    td.bokun_thum_container {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: space-between;
-    }
-    
-    img.bokul_image {
-        width: 24%;
-        margin-bottom: 2px;
-        box-sizing: border-box;
-        height: 40px !important;
-    }
-    
-    td.bokun_field_value {
-        width: 100px !important;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: clip;
-    }
-    
-    #bokul_api_form.form-field input,
-    #bokul_api_form .form-field input {
-        width: 25em;
-    }
-    
-    td.bokun_thum_container {
-        width: 200px;
-    }
-    
-    #activities-table_wrapper select {
-        width: 42%;
-    }
-    
-    #activities-table_wrapper div#activities-table_length {
-        width: 8%;
-    }
-    
-    .bkncpt-button-inprogress {
-        color: #fff !important;
-        background-color: #2196f3 !important;
-        border-color: #2196f3 !important;
-    }
-    
-    .bkncpt-button-success {
-        color: #fff !important;
-        background-color: #4caf50 !important;
-        border-color: #4caf50 !important;
-    }
-    
-    .bkncpt-hide {
-        display: none;
-    }
-    
-    .bkncpt-show {
-        display: block;
-    }
-    
-    .progress-wrapper {
-        position: relative;
-        display: inline-block;
-        height: 30px;
-        /* Adjust the height as needed */
-    }
-    
-    .progress-text {
-        position: absolute;
-        top: 60%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        color: #000;
-        font-size: 14px;
-        line-height: 33px;
-    }
-    
-    progress.bkncpt-progress-bar {
-        height: 40px;
-        width: 400px;
-    }
-    
-    .bkncpt-checkbox {
-        padding: 12px 0px 0px 3px !important;
-    }
-    
-    span.bokin-content {
-        white-space: break-spaces;
-    }
-    
-    .bkncpt_view_table img.bokul_image {
-        width: 29%;
-        margin: 5px;
-        box-sizing: border-box;
-        height: 55px !important;
-        box-shadow: 3px 4px #4640406b;
-    }
-    
-    span.badge.badge-primary {
-        background-color: #254867;
-        color: #fff;
-        margin-right: 5px;
-        padding: 5px 10px;
-        border-radius: 10px;
-        font-size: 13px;
-        text-transform: uppercase;
-        font-weight: 600;
-    }
-    
-    td a {
-        white-space: break-spaces;
-    }
+.bkncpt-dashboard {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    max-width: 1200px;
+}
+
+.bkncpt-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 28px;
+    box-shadow: 0 25px 50px rgba(20, 35, 90, 0.07);
+}
+
+.bkncpt-card--form {
+    border: 1px solid #e6ecff;
+}
+
+.bkncpt-card--muted {
+    background: #f4f7ff;
+    border: 1px solid #d8e2ff;
+}
+
+.bkncpt-card__header h1 {
+    margin-top: 0;
+    font-size: 24px;
+}
+
+.bkncpt-description {
+    color: #4d5b7c;
+    font-size: 14px;
+    margin-bottom: 0;
+}
+
+.bkncpt-controls,
+.bkncpt-settings-form {
+    margin-top: 20px;
+}
+
+.bkncpt-form-row,
+.bkncpt-toolbar,
+.bkncpt-form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: center;
+}
+
+.bkncpt-field-label,
+.bkncpt-field-group label {
+    font-weight: 600;
+    display: block;
+    margin-bottom: 6px;
+}
+
+.bkncpt-select,
+.bkncpt-field-group input,
+.bkncpt-settings-form select,
+.bkncpt-settings-form input {
+    border-radius: 8px;
+    border: 1px solid #ced4f2;
+    padding: 10px 12px;
+    min-width: 240px;
+    box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.bkncpt-meta {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.bkncpt-meta__label {
+    font-size: 12px;
+    text-transform: uppercase;
+    color: #6f7a94;
+    letter-spacing: 0.06em;
+}
+
+.bkncpt-meta__value {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1b2a52;
+}
+
+.bkncpt-toolbar {
+    justify-content: space-between;
+    background: #f8f9ff;
+    border-radius: 12px;
+    padding: 16px 20px;
+    border: 1px solid #e0e4fb;
+}
+
+.bkncpt-toolbar__info strong {
+    display: block;
+    font-size: 18px;
+}
+
+.bkncpt-toolbar__info span {
+    font-size: 13px;
+    color: #5f6b8f;
+}
+
+.bkncpt-table__wrapper {
+    margin-top: 16px;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid #e3e8ff;
+}
+
+.bkncpt-table th {
+    background: #f3f5ff;
+}
+
+.bkncpt-progress {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 18px;
+}
+
+.bkncpt-button-inprogress {
+    color: #fff !important;
+    background-color: #4c6ef5 !important;
+    border-color: #4c6ef5 !important;
+}
+
+.bkncpt-button-success {
+    color: #fff !important;
+    background-color: #2fb344 !important;
+    border-color: #2fb344 !important;
+}
+
+.bkncpt-hide {
+    display: none;
+}
+
+.progress-text {
+    font-weight: 600;
+    color: #1b2a52;
+}
+
+progress.bkncpt-progress-bar {
+    height: 18px;
+    width: 320px;
+    border-radius: 30px;
+    overflow: hidden;
+}
+
+.bkncpt-checkbox {
+    padding: 12px 0px 0px 3px !important;
+}
+
+.bkncpt-form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 24px;
+}
+
+.bkncpt-field-group input,
+.bkncpt-field-group select {
+    width: 100%;
+}
+
+.bkncpt-form-actions {
+    margin-top: 20px;
+}
+
+.bkncpt-reset-form {
+    margin-top: 16px;
+}
+
+td.bokun_thum_container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: flex-start;
+    width: 220px;
+}
+
+img.bokul_image {
+    width: 48px;
+    height: 48px !important;
+    object-fit: cover;
+    border-radius: 6px;
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.15);
+}
+
+td.bokun_field_value {
+    max-width: 160px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+span.bokin-content {
+    white-space: break-spaces;
+}
+
+.bkncpt_view_table img.bokul_image {
+    width: 60px;
+    margin: 6px;
+    height: 60px !important;
+    box-shadow: 3px 4px #4640406b;
+}
+
+span.badge.badge-primary {
+    background-color: #254867;
+    color: #fff;
+    margin-right: 5px;
+    padding: 5px 10px;
+    border-radius: 10px;
+    font-size: 13px;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+td a {
+    white-space: break-spaces;
+}
