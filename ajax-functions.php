@@ -1140,28 +1140,19 @@ function bkncpt_save_agenda_items_html($product_id, $agenda_items) {
     $agenda_items_html = array();
 
     foreach ($agenda_items as $item) {
+        if (empty($item['body'])) {
+            continue;
+        }
+
         $html = '<br><div class="agenda-item">';
-
-        if (!empty($item['location']['wholeAddress'])) {
-            $html .= '<p><span style="color: #ff5533;">&#x1F4CD;</span> ' . esc_html($item['location']['wholeAddress']) . '</p>';
-        }
-
-        if (!empty($item['body'])) {
-            $html .= '<p><strong>Description:</strong> ' . wp_kses_post($item['body']) . '</p>';
-        }
-
-        if (isset($item['location']['latitude']) && isset($item['location']['longitude'])) {
-            $latitude  = sanitize_text_field($item['location']['latitude']);
-            $longitude = sanitize_text_field($item['location']['longitude']);
-
-            if ($latitude !== '' && $longitude !== '') {
-                $map_url = 'https://maps.google.com/?q=' . rawurlencode($latitude . ',' . $longitude);
-                $html   .= '<a href="' . esc_url($map_url) . '" target="_blank" rel="noopener">' . esc_html__('Show map', 'import-bokun-to-wp-ecommerce-and-custom-fileds') . '</a><br><br>';
-            }
-        }
-
+        $html .= '<p>' . wp_kses_post($item['body']) . '</p>';
         $html .= '</div><hr>';
         $agenda_items_html[] = $html;
+    }
+
+    if (empty($agenda_items_html)) {
+        delete_post_meta($product_id, 'agenda_items_html');
+        return;
     }
 
     update_post_meta($product_id, 'agenda_items_html', implode('', $agenda_items_html));
