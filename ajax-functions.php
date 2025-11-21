@@ -891,6 +891,7 @@ function bkncpt_meta_allows_html( $meta_key ) {
         'bk_body',
         'bk_excerpt',
         'bk_included',
+        'bk_included_list',
         'bk_notIncluded',
         'bk_shortDescription',
         'bk_longDescription',
